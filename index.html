@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Diário Operacional — MNQ</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&display=swap');
+  :root{--bg:#0a0a0f;--surface:#111118;--surface2:#18181f;--border:#2a2a35;--accent:#00e5a0;--accent-dim:rgba(0,229,160,0.12);--warn:#ff6b35;--warn-dim:rgba(255,107,53,0.12);--yellow:#f5c842;--yellow-dim:rgba(245,200,66,0.12);--text:#e8e8f0;--text-muted:#6b6b80;--text-dim:#9999aa;--red:#ff4455;--red-dim:rgba(255,68,85,0.12)}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:'Space Grotesk',sans-serif;min-height:100vh;padding:24px 16px 60px}
+  .header{text-align:center;margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border)}
+  .header .label{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent);letter-spacing:3px;text-transform:uppercase;margin-bottom:8px}
+  .header h1{font-size:28px;font-weight:700;color:var(--text);letter-spacing:-.5px}
+  .header .sub{font-size:13px;color:var(--text-muted);margin-top:6px}
+  .date-bar{display:flex;gap:12px;margin-bottom:24px;align-items:center}
+  .date-bar input[type="date"]{background:var(--surface);border:1px solid var(--border);color:var(--text);font-family:'Space Mono',monospace;font-size:13px;padding:10px 14px;border-radius:8px;flex:1;outline:none}
+  .day-counter{font-family:'Space Mono',monospace;font-size:12px;color:var(--accent);background:var(--accent-dim);padding:8px 14px;border-radius:8px;white-space:nowrap}
+  .section{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px}
+  .section-title{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--text-muted);margin-bottom:16px;display:flex;align-items:center;gap:8px}
+  .section-title::after{content:'';flex:1;height:1px;background:var(--border)}
+  .semaforo{display:flex;gap:10px}
+  .semaforo-btn{flex:1;padding:14px 8px;border-radius:10px;border:2px solid transparent;cursor:pointer;font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;text-align:center;transition:all .15s;background:var(--surface2);color:var(--text-muted)}
+  .semaforo-btn .emoji{font-size:22px;display:block;margin-bottom:4px}
+  .semaforo-btn.verde{border-color:var(--accent);background:var(--accent-dim);color:var(--accent)}
+  .semaforo-btn.amarelo{border-color:var(--yellow);background:var(--yellow-dim);color:var(--yellow)}
+  .semaforo-btn.vermelho{border-color:var(--red);background:var(--red-dim);color:var(--red)}
+  .checklist{display:flex;flex-direction:column;gap:10px}
+  .check-item{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--surface2);border-radius:8px;cursor:pointer;border:1px solid transparent;transition:all .15s;font-size:14px;color:var(--text-dim)}
+  .check-item.checked{border-color:var(--accent);background:var(--accent-dim);color:var(--text)}
+  .check-item .box{width:20px;height:20px;border-radius:5px;border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+  .check-item.checked .box{background:var(--accent);border-color:var(--accent);color:#000}
+  .field{margin-bottom:14px}
+  .field:last-child{margin-bottom:0}
+  .field label{display:block;font-size:12px;color:var(--text-muted);margin-bottom:6px;font-weight:500;letter-spacing:.3px}
+  .field input,.field textarea,.field select{width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:'Space Grotesk',sans-serif;font-size:14px;padding:11px 14px;outline:none;transition:border-color .15s;resize:none}
+  .field input:focus,.field textarea:focus,.field select:focus{border-color:var(--accent)}
+  .field select option{background:var(--surface2)}
+  .grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .pnl-display{background:var(--surface2);border-radius:10px;padding:16px;text-align:center;margin-bottom:14px}
+  .pnl-number{font-family:'Space Mono',monospace;font-size:36px;font-weight:700;transition:color .3s}
+  .pnl-number.positive{color:var(--accent)}
+  .pnl-number.negative{color:var(--red)}
+  .pnl-number.zero{color:var(--text-muted)}
+  .pnl-label{font-size:11px;color:var(--text-muted);letter-spacing:1px;text-transform:uppercase;margin-top:4px}
+  .progress-bars{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+  .bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--text-muted);margin-bottom:5px}
+  .bar-track{height:6px;background:var(--surface2);border-radius:99px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:99px;transition:width .4s ease}
+  .bar-fill.lucro{background:var(--accent)}
+  .bar-fill.drawdown{background:var(--red)}
+  .ops-table{width:100%;border-collapse:collapse}
+  .ops-table th{font-family:'Space Mono',monospace;font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--text-muted);padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  .ops-table td{padding:10px;font-size:13px;border-bottom:1px solid rgba(42,42,53,.5);vertical-align:middle}
+  .ops-table tr:last-child td{border-bottom:none}
+  .result-badge{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:600;font-family:'Space Mono',monospace}
+  .result-badge.win{background:var(--accent-dim);color:var(--accent)}
+  .result-badge.loss{background:var(--red-dim);color:var(--red)}
+  .add-op-btn{width:100%;padding:12px;background:var(--accent-dim);border:1px dashed var(--accent);border-radius:8px;color:var(--accent);font-family:'Space Grotesk',sans-serif;font-size:13px;font-weight:600;cursor:pointer;margin-top:12px;transition:all .15s;letter-spacing:.5px}
+  .alert-box{padding:14px 16px;border-radius:10px;font-size:14px;font-weight:600;display:none;align-items:center;gap:10px;margin-top:14px}
+  .alert-box.show{display:flex}
+  .alert-box.danger{background:var(--red-dim);border:1px solid var(--red);color:var(--red)}
+  .alert-box.success{background:var(--accent-dim);border:1px solid var(--accent);color:var(--accent)}
+  .alert-box.warn{background:var(--yellow-dim);border:1px solid var(--yellow);color:var(--yellow)}
+  .save-btn{width:100%;padding:16px;background:var(--accent);color:#000;border:none;border-radius:10px;font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;cursor:pointer;letter-spacing:.5px;transition:opacity .15s;margin-top:8px}
+  .save-btn:hover{opacity:.85}
+  .history-list{display:flex;flex-direction:column;gap:8px}
+  .history-item{background:var(--surface2);border-radius:8px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;font-size:13px;border:1px solid transparent;transition:border-color .15s}
+  .history-item .date{color:var(--text-dim);font-family:'Space Mono',monospace;font-size:12px}
+  .history-item .pnl{font-family:'Space Mono',monospace;font-weight:700;font-size:14px}
+  .history-item .pnl.pos{color:var(--accent)}
+  .history-item .pnl.neg{color:var(--red)}
+  .tabs{display:flex;gap:4px;margin-bottom:20px;background:var(--surface);padding:4px;border-radius:10px;border:1px solid var(--border)}
+  .tab{flex:1;padding:10px;text-align:center;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;color:var(--text-muted);transition:all .15s;border:none;background:none}
+  .tab.active{background:var(--surface2);color:var(--text)}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  .mantra-box{background:var(--surface2);border-left:3px solid var(--accent);border-radius:0 10px 10px 0;padding:16px;font-size:15px;color:var(--text-dim);font-style:italic;line-height:1.6;margin-bottom:16px}
+  .emotion-slider{width:100%;margin-top:4px;accent-color:var(--accent)}
+  .emotion-labels{display:flex;justify-content:space-between;font-size:11px;color:var(--text-muted);margin-top:4px}
+  .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:100;padding:16px}
+  .modal-overlay.show{display:flex}
+  .modal{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:24px;width:100%;max-width:400px}
+  .modal h3{font-size:16px;margin-bottom:16px;color:var(--text)}
+  .modal-actions{display:flex;gap:8px;margin-top:20px}
+  .btn-outline{flex:1;padding:12px;background:transparent;border:1px solid var(--border);border-radius:8px;color:var(--text-dim);font-family:'Space Grotesk',sans-serif;font-size:14px;cursor:pointer}
+  .btn-primary{flex:1;padding:12px;background:var(--accent);border:none;border-radius:8px;color:#000;font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="label">Matheus · MNQ · Teste $25k</div>
+  <h1>Diário Operacional</h1>
+  <div class="sub">Processo > Resultado. Todo dia.</div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('hoje',this)">Hoje</button>
+  <button class="tab" onclick="switchTab('operacoes',this)">Operações</button>
+  <button class="tab" onclick="switchTab('noite',this)">Fechamento</button>
+  <button class="tab" onclick="switchTab('historico',this)">Histórico</button>
+</div>
+<div class="tab-content active" id="tab-hoje">
+  <div class="mantra-box">"Hoje eu não preciso recuperar nada. Hoje eu executo o plano. O Uber paga as contas. O mercado é meu laboratório."</div>
+  <div class="date-bar">
+    <input type="date" id="data-hoje">
+    <div class="day-counter" id="dia-counter">Dia —</div>
+  </div>
+  <div class="section">
+    <div class="section-title">Estado emocional — agora</div>
+    <div class="semaforo">
+      <button class="semaforo-btn" id="sem-verde" onclick="setSemaforo('verde')"><span class="emoji">🟢</span>Calmo<div style="font-size:11px;margin-top:4px;font-weight:400">Entra normal</div></button>
+      <button class="semaforo-btn" id="sem-amarelo" onclick="setSemaforo('amarelo')"><span class="emoji">🟡</span>Tenso<div style="font-size:11px;margin-top:4px;font-weight:400">½ tamanho</div></button>
+      <button class="semaforo-btn" id="sem-vermelho" onclick="setSemaforo('vermelho')"><span class="emoji">🔴</span>Raiva<div style="font-size:11px;margin-top:4px;font-weight:400">Não entra</div></button>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Ritual de abertura</div>
+    <div class="checklist">
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Bebi água antes de abrir a plataforma</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Fiz 10 respirações (4-4-4)</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Escrevi o mantra no quadro branco</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Respondi as 3 perguntas do quadro</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Defini meu stop diário ($300) e meta ($150)</span></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">P&L do dia</div>
+    <div class="pnl-display">
+      <div class="pnl-number zero" id="pnl-display">$0</div>
+      <div class="pnl-label">Resultado acumulado hoje</div>
+    </div>
+    <div class="grid-2">
+      <div class="field"><label>P&L atual ($)</label><input type="number" id="pnl-input" placeholder="ex: 150" oninput="updatePnL(this.value)" step="0.01"></div>
+      <div class="field"><label>Nº de operações</label><input type="number" id="num-ops" placeholder="0" min="0"></div>
+    </div>
+    <div class="progress-bars">
+      <div class="bar-row"><div class="bar-label"><span>Meta do dia</span><span id="pct-meta">0%</span></div><div class="bar-track"><div class="bar-fill lucro" id="bar-meta" style="width:0%"></div></div></div>
+      <div class="bar-row"><div class="bar-label"><span>Drawdown usado</span><span id="pct-dd">0%</span></div><div class="bar-track"><div class="bar-fill drawdown" id="bar-dd" style="width:0%"></div></div></div>
+    </div>
+    <div class="alert-box danger" id="alert-stop">🛑 STOP DIÁRIO ATINGIDO — Fecha a plataforma agora.</div>
+    <div class="alert-box success" id="alert-meta">✅ Meta do dia batida — você pode encerrar com dignidade.</div>
+    <div class="alert-box warn" id="alert-quase">⚠️ 80% do drawdown usado — diminui o tamanho ou para.</div>
+  </div>
+</div>
+<div class="tab-content" id="tab-operacoes">
+  <div class="section">
+    <div class="section-title">Registro de operações</div>
+    <div style="overflow-x:auto">
+      <table class="ops-table" id="ops-table">
+        <thead><tr><th>#</th><th>Direção</th><th>Contratos</th><th>Entrada</th><th>Stop</th><th>Alvo</th><th>Resultado</th><th>Semáforo</th></tr></thead>
+        <tbody id="ops-body"><tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px">Nenhuma operação registrada ainda</td></tr></tbody>
+      </table>
+    </div>
+    <button class="add-op-btn" onclick="openModal()">+ Registrar operação</button>
+  </div>
+</div>
+<div class="tab-content" id="tab-noite">
+  <div class="section">
+    <div class="section-title">Reflexão do dia</div>
+    <div class="field"><label>O que eu fiz CERTO hoje?</label><textarea id="certo" rows="3" placeholder="Seja específico..."></textarea></div>
+    <div class="field"><label>Que regra eu quebrei (se houver)?</label><textarea id="quebrei" rows="3" placeholder="Se não quebrou nada, escreve: NENHUMA."></textarea></div>
+    <div class="field"><label>O que eu senti no momento exato que quebrei?</label><textarea id="senti" rows="3" placeholder="Era raiva? Pressa? Sensação de 'eu sei que vai funcionar'?"></textarea></div>
+    <div class="field">
+      <label>Nível de controle emocional hoje (1 = sem controle, 10 = perfeito)</label>
+      <input type="range" class="emotion-slider" id="controle-slider" min="1" max="10" value="5" oninput="updateSlider(this.value)">
+      <div class="emotion-labels"><span>1 — Descontrolei</span><span id="slider-val">5</span><span>10 — Perfeito</span></div>
+    </div>
+    <div class="field"><label>Uma coisa que vou fazer diferente amanhã</label><textarea id="amanha" rows="2" placeholder="Uma coisa. Pequena. Concreta."></textarea></div>
+  </div>
+  <div class="section">
+    <div class="section-title">Checklist de encerramento</div>
+    <div class="checklist">
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Fechei a plataforma (não minimizei)</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Fiz o diário de fechamento</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Não fiz nenhuma operação de raiva</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Fiz caminhada ou exercício hoje</span></div>
+      <div class="check-item" onclick="toggleCheck(this)"><div class="box">✓</div><span>Dormi/vou dormir 7h+</span></div>
+    </div>
+  </div>
+  <button class="save-btn" onclick="salvarDia()">💾 Salvar dia</button>
+</div>
+<div class="tab-content" id="tab-historico">
+  <div class="section">
+    <div class="section-title">Progresso do teste</div>
+    <div class="pnl-display">
+      <div class="pnl-number" id="total-acumulado" style="color:var(--accent)">$0</div>
+      <div class="pnl-label">Total acumulado no teste</div>
+    </div>
+    <div class="progress-bars">
+      <div class="bar-row"><div class="bar-label"><span>Meta do teste ($1.500)</span><span id="pct-teste">0%</span></div><div class="bar-track"><div class="bar-fill lucro" id="bar-teste" style="width:0%"></div></div></div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="section-title">Dias registrados</div>
+    <div class="history-list" id="history-list"><div style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px">Nenhum dia salvo ainda</div></div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h3>📋 Registrar operação</h3>
+    <div class="field"><label>Semáforo no momento da entrada</label><select id="op-semaforo"><option value="🟢">🟢 Verde — calmo</option><option value="🟡">🟡 Amarelo — tenso</option><option value="🔴">🔴 Vermelho — raiva</option></select></div>
+    <div class="grid-2">
+      <div class="field"><label>Direção</label><select id="op-dir"><option value="LONG">LONG ↑</option><option value="SHORT">SHORT ↓</option></select></div>
+      <div class="field"><label>Contratos</label><input type="number" id="op-contratos" placeholder="2" min="1" max="10"></div>
+    </div>
+    <div class="grid-3">
+      <div class="field"><label>Entrada</label><input type="number" id="op-entrada" placeholder="19500" step="0.25"></div>
+      <div class="field"><label>Stop</label><input type="number" id="op-stop" placeholder="19480" step="0.25"></div>
+      <div class="field"><label>Alvo</label><input type="number" id="op-alvo" placeholder="19540" step="0.25"></div>
+    </div>
+    <div class="field"><label>Resultado ($) — preenche ao fechar</label><input type="number" id="op-resultado" placeholder="ex: 75 ou -50" step="0.01"></div>
+    <div class="modal-actions">
+      <button class="btn-outline" onclick="closeModal()">Cancelar</button>
+      <button class="btn-primary" onclick="addOp()">Registrar</button>
+    </div>
+  </div>
+</div>
+<script>
+  let state={semaforo:null,historico:[],diaInicio:null};
+  let ops=[];
+
+  function loadState(){
+    try{
+      const s=localStorage.getItem('diario-mnq');
+      if(s){const p=JSON.parse(s);state.historico=p.historico||[];state.diaInicio=p.diaInicio||today();}
+      else{state.diaInicio=today();}
+    }catch(e){state.diaInicio=today();}
+    renderHistorico();
+  }
+
+  function saveState(){
+    try{localStorage.setItem('diario-mnq',JSON.stringify({historico:state.historico,diaInicio:state.diaInicio}));}catch(e){}
+  }
+
+  function today(){return new Date().toISOString().split('T')[0];}
+
+  document.getElementById('data-hoje').value=today();
+  loadState();
+  updateDiaCounter();
+
+  function updateDiaCounter(){
+    const inicio=state.diaInicio||today();
+    const diff=Math.floor((new Date(today())-new Date(inicio))/86400000)+1;
+    document.getElementById('dia-counter').textContent='Dia '+diff+' de 30';
+  }
+
+  function switchTab(tab,el){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+tab).classList.add('active');
+    el.classList.add('active');
+    if(tab==='historico')renderHistorico();
+  }
+
+  function setSemaforo(cor){
+    state.semaforo=cor;
+    ['verde','amarelo','vermelho'].forEach(c=>{document.getElementById('sem-'+c).classList.remove('verde','amarelo','vermelho');});
+    document.getElementById('sem-'+cor).classList.add(cor);
+  }
+
+  function toggleCheck(el){el.classList.toggle('checked');}
+
+  function updatePnL(val){
+    const v=parseFloat(val)||0;
+    const d=document.getElementById('pnl-display');
+    d.textContent=(v>=0?'+':'')+'$'+v.toFixed(0);
+    d.className='pnl-number '+(v>0?'positive':v<0?'negative':'zero');
+    const mp=Math.min(100,Math.max(0,(v/150)*100));
+    const dp=Math.min(100,Math.max(0,(Math.abs(Math.min(0,v))/300)*100));
+    document.getElementById('bar-meta').style.width=mp+'%';
+    document.getElementById('pct-meta').textContent=Math.round(mp)+'%';
+    document.getElementById('bar-dd').style.width=dp+'%';
+    document.getElementById('pct-dd').textContent=Math.round(dp)+'%';
+    document.getElementById('alert-stop').classList.toggle('show',v<=-300);
+    document.getElementById('alert-meta').classList.toggle('show',v>=150);
+    document.getElementById('alert-quase').classList.toggle('show',v<0&&Math.abs(v)>=240&&Math.abs(v)<300);
+  }
+
+  function openModal(){document.getElementById('modal').classList.add('show');}
+  function closeModal(){document.getElementById('modal').classList.remove('show');}
+
+  function addOp(){
+    const op={
+      semaforo:document.getElementById('op-semaforo').value,
+      dir:document.getElementById('op-dir').value,
+      contratos:document.getElementById('op-contratos').value||'—',
+      entrada:document.getElementById('op-entrada').value||'—',
+      stop:document.getElementById('op-stop').value||'—',
+      alvo:document.getElementById('op-alvo').value||'—',
+      resultado:parseFloat(document.getElementById('op-resultado').value)||null
+    };
+    ops.push(op);
+    renderOps();
+    closeModal();
+    ['op-contratos','op-entrada','op-stop','op-alvo','op-resultado'].forEach(id=>document.getElementById(id).value='');
+  }
+
+  function renderOps(){
+    const tb=document.getElementById('ops-body');
+    if(!ops.length){tb.innerHTML='<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px">Nenhuma operação registrada ainda</td></tr>';return;}
+    tb.innerHTML=ops.map((op,i)=>`<tr><td style="color:var(--text-muted);font-family:'Space Mono',monospace">${i+1}</td><td style="font-weight:600;color:${op.dir==='LONG'?'var(--accent)':'var(--warn)'}">${op.dir}</td><td>${op.contratos}</td><td style="font-family:'Space Mono',monospace">${op.entrada}</td><td style="font-family:'Space Mono',monospace;color:var(--red)">${op.stop}</td><td style="font-family:'Space Mono',monospace;color:var(--accent)">${op.alvo}</td><td>${op.resultado!==null?`<span class="result-badge ${op.resultado>=0?'win':'loss'}">${op.resultado>=0?'+':''}$${op.resultado.toFixed(0)}</span>`:'<span style="color:var(--text-muted)">—</span>'}</td><td>${op.semaforo}</td></tr>`).join('');
+  }
+
+  function updateSlider(val){document.getElementById('slider-val').textContent=val;}
+
+  function salvarDia(){
+    const entrada={
+      data:document.getElementById('data-hoje').value,
+      pnl:parseFloat(document.getElementById('pnl-input').value)||0,
+      ops:ops.length,
+      semaforo:state.semaforo,
+      controle:parseInt(document.getElementById('controle-slider').value),
+      certo:document.getElementById('certo').value,
+      quebrei:document.getElementById('quebrei').value,
+      senti:document.getElementById('senti').value,
+      amanha:document.getElementById('amanha').value
+    };
+    state.historico=state.historico.filter(d=>d.data!==entrada.data);
+    state.historico.unshift(entrada);
+    saveState();
+    renderHistorico();
+    alert('✅ Dia salvo!');
+  }
+
+  function renderHistorico(){
+    const list=document.getElementById('history-list');
+    if(!state.historico.length){
+      list.innerHTML='<div style="text-align:center;color:var(--text-muted);padding:24px;font-size:13px">Nenhum dia salvo ainda</div>';
+      document.getElementById('total-acumulado').textContent='$0';
+      document.getElementById('bar-teste').style.width='0%';
+      document.getElementById('pct-teste').textContent='0%';
+      return;
+    }
+    const total=state.historico.reduce((s,d)=>s+(d.pnl||0),0);
+    document.getElementById('total-acumulado').textContent=(total>=0?'+':'')+'$'+total.toFixed(0);
+    document.getElementById('total-acumulado').style.color=total>=0?'var(--accent)':'var(--red)';
+    const tp=Math.min(100,Math.max(0,(total/1500)*100));
+    document.getElementById('bar-teste').style.width=tp+'%';
+    document.getElementById('pct-teste').textContent=Math.round(tp)+'%';
+    list.innerHTML=state.historico.map(d=>`<div class="history-item"><div><div class="date">${fmt(d.data)}</div><div style="font-size:12px;color:var(--text-muted);margin-top:2px">${d.ops||0} operações · controle ${d.controle||'—'}/10</div></div><div class="pnl ${(d.pnl||0)>=0?'pos':'neg'}">${(d.pnl||0)>=0?'+':''}$${(d.pnl||0).toFixed(0)}</div></div>`).join('');
+  }
+
+  function fmt(str){if(!str)return'—';const[y,m,d]=str.split('-');return`${d}/${m}/${y}`;}
+</script>
+</body>
+</html>
